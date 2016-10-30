@@ -1,0 +1,179 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <title>Air Pollution Across the Globe</title>
+    <meta charset="utf-8">
+    <style type="text/css">
+      html {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        background: #000000 url(/assets/img/stars.jpg) repeat;
+        color: #ffffff;
+        font-family: sans-serif;
+        font-size: 13px;
+        line-height: 20px;
+        height: 100%;
+      }
+
+      #info {
+
+        font-size: 11px;
+        position: absolute;
+        bottom: 5px;
+        background-color: rgba(0,0,0,0.8);
+        border-radius: 3px;
+        right: 10px;
+        padding: 10px;
+
+      }
+
+      #currentInfo {
+        width: 270px;
+        position: absolute;
+        top: 63px;
+
+        background-color: rgba(0,0,0,0.2);
+
+        border-top: 1px solid rgba(255,255,255,0.4);
+        padding: 10px;
+      }
+
+      a {
+        color: #aaa;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+
+      .bull {
+        padding: 0 5px;
+        color: #555;
+      }
+
+      #title {
+        position: absolute;
+        top: 20px;
+        width: 500px;
+        left: 20px;
+        background-color: rgba(0,0,0,0.2);
+        border-radius: 3px;
+        font: 20px Georgia;
+        padding: 10px;
+      }
+
+      .pollutant {
+        font: 16px Georgia;
+        line-height: 26px;
+        height: 30px;
+        text-align: center;
+        float: left;
+        width: 300px;
+        color: rgba(255, 255, 255, 0.4);
+
+        cursor: pointer;
+        -webkit-transition: all 0.1s ease-out;
+      }
+
+      .pollutant:hover, .pollutant.active {
+        font-size: 23px;
+        color: #fff;
+      }
+
+      #top {
+        font: 16px Georgia;
+        line-height: 26px;
+        height: 30px;
+        text-align: center;
+        float: left;
+        width: 300px;
+        color: rgba(255, 255, 255, 0.4);
+      }
+      #container
+      {
+        background: #000000 url(/assets/img/loading.gif) center center no-repeat;
+      }
+    </style>
+  </head>
+  <body>
+
+  <div id="container"></div>
+
+  <div id="info">
+    <strong>Build with <a href="http://www.chromeexperiments.com/globe">WebGL Globe</a> by <u><a href="s.k.xu@berkeley.edu">Kate Shijie Xu</a></u></strong><span class="bull">&bull;</span> Based on <a href="http://www.who.int/phe/health_topics/outdoorair/databases/cities/en/">WHO data</a> from May 2016
+  </div>
+
+  <div id="currentInfo">
+    <span id="top">Annual mean concentration in ug/m3 </span>
+    <span id="pollutant0" class="pollutant">PM10</span>
+    <span id="pollutant1" class="pollutant">PM2.5</span>
+  </div>
+
+  <div id="title">
+    Air Pollution Across the Globe
+  </div>
+
+  <script type="text/javascript" src="third-party/Detector.js"></script>
+  <script type="text/javascript" src="third-party/three.min.js"></script>
+  <script type="text/javascript" src="third-party/Tween.js"></script>
+  <script type="text/javascript" src="globe.js"></script>
+  <script type="text/javascript">
+
+    if(!Detector.webgl){
+      Detector.addGetWebGLMessage();
+    } else {
+      var series = ['Average PM 10 in ug/m3', 'Average PM 2.5 in ug/m3'];
+      var container = document.getElementById('container');
+      var globe = new DAT.Globe(container);
+      console.log(globe);
+      var i, tweens = [];
+
+      var settime = function(globe, t) {
+        return function() {
+          new TWEEN.Tween(globe).to({time: t/series.length},500).easing(TWEEN.Easing.Cubic.EaseOut).start();
+          var y = document.getElementById('pollutant'+t);
+          if (y.getAttribute('class') === 'pollutant active') {
+            return;
+          }
+          var yy = document.getElementsByClassName('pollutant');
+          for(i=0; i<yy.length; i++) {
+            yy[i].setAttribute('class','pollutant');
+          }
+          y.setAttribute('class', 'pollutant active');
+        };
+      };
+      for(var i = 0; i<series.length; i++) {
+        var y = document.getElementById('pollutant'+i);
+        y.addEventListener('mouseover', settime(globe,i), false);
+      }
+      var xhr;
+      TWEEN.start();
+
+      xhr = new XMLHttpRequest();
+      xhr.open('GET', '/assets/data/data.json', true);
+      xhr.onreadystatechange = function(e) {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            var data = JSON.parse(xhr.responseText);
+            window.data = data;
+            for (i=0;i<data.length;i++) {
+              globe.addData(data[i][1], {format: 'magnitude', name: data[i][0], animated: true});
+            }
+            globe.createPoints();
+            settime(globe,0)();
+            globe.animate();
+            document.body.style.backgroundImage = '/assets/img/stars.jpg';
+          }
+        }
+      };
+      xhr.send(null);
+    }
+
+  </script>
+
+  </body>
+
+</html>
